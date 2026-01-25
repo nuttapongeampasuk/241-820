@@ -5,22 +5,64 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
 </head>
-    
+<body>
+        <ul>
+        <li>อ่านหนังสือ</li>
+        <li>ว่ายน้ำ</li>
+        <li>เล่นเกม</li>
+    <h1>งานอดิเรก</h1>
+    <div id="content"></div>
 
-</body>
-<input type="radio"name="gender" value="male" onchange="changeGender()" checked="true"> Male
-<input type="radio"name="gender" value="female" onchange="changeGender()"> Female
+    <input type="checkbox" name="hobby" value="reading"> อ่านหนังสือ
+    <input type="checkbox"name="hobby" value="swimmimg"> ว่ายน้ำ
+    <input type="checkbox"name="hobby" value="gaming"> เล่นเกม
+    <button onclick="submitHobby()">Submit</button>
     <script>
-        function changeGender() {
-            //เลือก gender ทุก input ออกมา
-            let gendersInputs = document.querySelectorAll('input[name="gender"]');
-            //ใคร checked อยู่ = เพศโดนเลือกอยู่
-            for (let i=0; i < gendersInputs.length; i++) {
-                if (gendersInputs[i].checked) {
-                    console.log("Gender selected: " + gendersInputs[i].value);
+        function submitHobby() {
+            let hobbies = document.querySelectorAll('input[name="hobby"]');
+            let contentHTML = '<ul>' ;
+            for (let i=0; i<hobbies.length; i++){
+                if(hobbies[i].checked){
+                    contentHTML += '<li>' + hobbies[i].value + '</li>';
                 }
             }
+            contentHTML += '</ul>';
+
+            let contentDiv = document.getElementById('content');
+            contentDiv.innerHTML = contentHTML;
         }
     </script>
-</script>
+<!--<div id="hi">Hi <span style="display: none;">A</span></div>
+    <script>
+        let hiDom = document.getElementById("hi");
+        hiDom.innerHTML = "Hi<b>B</b>";
+
+        console.log(hiDom.textContent);
+        console.log(hiDom.innerText);
+        console.log(hiDom.innerHTML);
+    </script>
+<div
+onmouseover="OverItem()"
+onmouseup="UpItem()"
+onmousedown="DownItem()"> Click</div>
+    <script>
+        function OverItem() {
+            console.log("Mouse over detected");
+        }
+        function UpItem() {
+            console.log("Mouse Up Detected");
+        }
+        function DownItem() {
+            console.log("Mouse down detected");
+        }
+    </script>
+
+ชื่อ: <input type="text" name="fname" onkeyup="changeFname()"/>
+    <script>
+        function changeFname() {
+            console.log("Key down event detected");
+            let inputElement = document.querySelector('input[name="fname"]');
+        }
+    </script>!-->
+</body>
 </html>
