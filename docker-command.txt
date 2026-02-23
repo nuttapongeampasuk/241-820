@@ -1,0 +1,40 @@
+//show all containers (default shows just running)
+docker ps --all
+
+//show just running containers
+docker ps
+
+docker run hello-world
+
+//docker stop 
+docker stop containers_id
+
+//docker an image from a registry
+docker pull <image_name>
+
+//create a container from an image
+docke create <image_name>
+
+//start a container
+docker start <containers_id>
+
+//remove a container
+docker rm <containers_id>
+
+//remove all container
+docker system prune
+
+//nginx server
+docker run nginx
+
+//sh container
+docker run -it <image_name or containers_id> sh
+
+//cat file inside container
+cat filename.txt
+
+forground mode
+docker run -p 9000:80 nginx
+
+//detached mode
+docker run -d -p 9100:80 nginx

@@ -1,6 +1,6 @@
-const express = require('express');
 const bodyParser = require('body-parser');
-const e = require('express');
+const express = require('express');
+const mysql = require('mysql2/promise');
 const app = express();
 const port = 8000;
 
@@ -8,69 +8,145 @@ app.use(bodyParser.json());
 
 let users = []
 let counter = 1;
+let conn = null
+const initMySQL = () => {
+    conn = mysql.createConnection({
+        host: 'localhost',
+        user: 'root',
+        password: 'root',
+        database: 'webdb',
+        port: 8820
+    });
+}
 
-//path - /test
-app.get('/test', (req, res) => {
-    let user = {
-        name: 'John Doe',
-        age: 30,
-        email: 'john.doe@example.com'
-    };
-    res.json(user);
-});
-
-//path - POST /user
-app.post('/user', (req, res) => {
-    let user = req.body;
-    user.id = counter++;
-    users.push(user);
-    res.json({
-        message: 'User added successfully',
-        user: user
+app.get('/testdb', (req, res) => {
+    mysql.createConnection({
+        host: 'localhost',
+        user: 'root',
+        password: 'root',
+        database: 'webdb',
+        port: 8820
+    }).then((conn) => {
+        conn.query('SELECT * FROM users')
+            .then((results) => {
+                res.json(results[0]);
+            })
+            .catch((err) => {
+                console.error('Database query error:', err.message);
+                res.status(500).json({ error: 'Database query error' });
+            });
     });
 });
+app.get('/testdb-new', async (req, res) => {
+    try {
 
-//path - PUT /user/:id
-app.patch('/user/:id', (req, res) => {
-    let id = req.params.id
-    let updatedUser = req.body;
-    //หา user จาก id
-    let selectedIndex = users.findIndex(user => user.id == id)
-    //update users นั้น
-    if (updatedUser.name ) {
-
+        const results = await conn.query('SELECT * FROM users');
+        res.json(results[0]);
+    } catch (error) {
+        console.error('Database query error:', error.message);
+        res.status(500).json({ error: 'Database query error' });
     }
-
-    users[selectedIndex].name = updatedUser.name || users[selectedIndex].name
-    //ส่ง response กลับไปว่า update สำเร็จ
-
-    res.json({
-        message: 'User updated successfully',
-        data : {
-            user: updatedUser,
-            indexUpdated: selectedIndex
-        }
-    })
-})
-
-//Path - DELETE /user/:id
-app.delete('/user/:id', (req, res) => {
-    let id = req.params.id
-    let selectedIndex = users.findIndex(user => user.id == id)
-    if (selectedIndex !== -1) {
-        res.json({
-            message: 'User deleted successfully',
-            data: {
-                IndexDeleted: selectedIndex
-            }
-        })
-    } else {
-        res.status(404).json({
-            message: 'User not found'
-        })
-    }
-})
-
-app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
 });
+
+
+/**
+ GET /users สำหรับ get ข้อมูลผู้ใช้ทั้งหมด
+ POST /user สำหรับเพิ่มผู้ใช้ใหม่
+ GET /user/:id สำหรับ get ข้อมูลผู้ใช้ที่มี id
+ PUT /user/:id สำหรับแก้ไขข้อมูลผู้ใช้ที่มี id
+ DELETE /user
+ */
+
+//path = /users (ชื่อ path อะไรก็ได้ที่เราต้องการ)
+app.get('/users', async (req, res) => {
+    const results = await conn.query('SELECT * FROM users');
+    res.json(results[0]);
+});
+
+
+
+//path = POST /user
+app.post('/user', async (req, res) => {
+    try {
+        let users = req.body;
+        const results = await conn.query('INSERT INTO users SET ?', users)
+        res.json({
+            message: 'User added successfully',
+            data: results[0]
+        })
+    } catch (error) {
+        console.error('Error creating user:', error);
+        res.status(500).json({
+            message: 'Error adding user',
+            error: error.message
+        });
+    }
+});
+
+
+//path = GET /user/:id สำหรับ get ข้อมูลผู้ใช้ที่มี id ตรงกับ id ที่ส่งมา
+app.get('/user/:id', async (req, res) => {
+    try {
+        let id = req.params.id
+        const results = await conn.query('SELECT * FROM users WHERE id = ?', [id]);
+        if (results[0].length > 0) {
+            throw { statusCode: 404, message: 'User not found' }
+        }
+        res.json(results[0][0]);
+    }
+    catch (error) {
+        console.error('Error fetching user:', error);
+        res.status(500).json({
+            message: 'Error fetching user',
+            error: error.message
+        });
+    }
+})
+
+// PUT = /users/:id สำหรับแก้ไขข้อมูลผู้ใช้ที่มี id ตรงกับ id ที่ส่งมา
+app.put('/user/:id', async (req, res) => {
+    try {
+        let id = req.params.id
+        let users = req.body;
+        const results = await conn.query('UPDATE users SET ? WHERE id = ?', [users, id])
+        res.json({
+            message: 'User updated successfully',
+            data: updateUser
+        });
+    }
+    catch (error) {
+        console.error('Error updating user:', error.message);
+        let statusCode = error.statusCode || 500;
+        res.status(statusCode).json({
+            message: 'Error updating user',
+            error: error.message
+        });
+    }
+})
+
+//DELETE = /user/:id สำหรับลบข้อมูลผู้ใช้ที่มี id ตรงกับ id ที่ส่งมา
+app.delete('/user/:id', async (req, res) => {
+    try {
+        let id = req.params.id
+        const results = await conn.query('DELETE FROM users WHERE id = ?', [id])
+        if (results[0].affectedRows == 0) {
+            throw { statusCode: 404, message: 'User not found' }
+        }
+        res.json({
+            message: 'User deleted successfully'
+        });
+    }
+    catch (error) {
+        console.error('Error deleting user:', error.message);
+        let statusCode = error.statusCode || 500;
+        res.status(statusCode).json({
+            message: 'Error deleting user',
+            error: error.message
+        });
+    }
+})
+
+    app.listen(port, async () => {
+        await initMySQL();
+        console.log(`Server is running on port ${port}`);
+    });
